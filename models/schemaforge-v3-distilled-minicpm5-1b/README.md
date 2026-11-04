@@ -27,7 +27,9 @@ V2's own research closed out with one dominant unsolved problem: `missing_field`
 
 ## Results
 
-72-record held-out eval set spanning all 12 schemas (`data/eval_holdout.jsonl`):
+> **Erratum (2026-11-04).** The 72-record and 288-record eval sets are **not held out** from training. They use the same seed templates as the training corpus. Of the 72 source texts, 15 share a 13-word run with a training source text; of the 288, 60 do. Exact matches: 0 of 72 and 0 of 288. The three held-out schemas (insurance_claim, conversation, kg_triple) have no 13-word overlap with training. Treat the headline numbers as in-sample for the nine training schemas. See `docs/FINDINGS_V3_ITERATIONS_1_4.md` section 3.
+
+72-record eval set spanning all 12 schemas (`data/eval_holdout.jsonl`):
 
 | Model | Dataset | Method | Field F1 |
 |------|---------|--------|-------|
@@ -82,11 +84,13 @@ print(tokenizer.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_token
 
 For production use, run the **release V2-FINAL checkpoint** behind the deterministic pre-pass (`schemaforge/deterministic/`), not this checkpoint (it underperforms V2-FINAL). If you do use this checkpoint, the prompt format (schema name + explicit residual field list from the schema's `semantic_fields` minus whatever the deterministic pass already resolved) must match training; see `src/08_hybrid_eval.py`'s `build_prompt` in the source repository for the exact template.
 
+Scope note: the recommendation to run the release V2-FINAL checkpoint rests on the 72-record set, which has 27 of 72 entity-masked template matches to V2 training data (see the erratum in the V2 model card and `docs/FINDINGS_V3_ITERATIONS_1_4.md` section 5). The numbers are unchanged.
+
 ## Dataset
 
 - 3600-record corpus generated at n=100/schema/severity (`data/corpus_v3_iter1.jsonl`), same generation command, operator mix, and seed as V2's corpus, scaled up from n=75.
-- **Preprocessing.** Iteration 2's attempted fresh teacher generation wedged (deadlock at batch 208/900, busy-spin >1h, killed). Because teacher generation is deterministic (greedy, temperature=0.0), the saved iteration-1 raw outputs are byte-identical to a fresh run, so the admission gate was re-run on iteration 1's saved rejections (`data/teacher_dataset_rejections_v3iter1_bak.json`, 1443 records) with `fuzzy_support=True` (threshold 0.85) by `src/09_recover_fuzzy.py` on CPU, recovering 534/1443 (37%), giving 2691/3600 admitted (25.2% rejected vs 40.1% under the strict gate used in iteration 1). Training dataset: `data/teacher_dataset_v3iter2.json`.
-- **Splits.** Same 9 training / 3 held-out schema split as V2; evaluated on both the 72-record and 288-record held-out sets.
+- **Preprocessing.** Iteration 2's attempted fresh teacher generation wedged (deadlock at batch 208/900, busy-spin >1h, killed). Because teacher generation is deterministic (greedy, temperature=0.0), the saved iteration-1 raw outputs are byte-identical to a fresh run, so the admission gate was re-run on iteration 1's saved rejections (`data/teacher_dataset_rejections_v3iter1_bak.json`, 1443 records) with `fuzzy_support=True` (threshold 0.85) by `src/09_recover_fuzzy.py` on CPU, recovering 534 of the 1232 step-3 rejections (43%; the other 211 of the 1443 failed step 2 and cannot be recovered by fuzzy matching), giving 2691/3600 admitted (25.2% rejected vs 40.1% under the strict gate used in iteration 1). Training dataset: `data/teacher_dataset_v3iter2.json`.
+- **Splits.** Same 9 training / 3 held-out schema split as V2; evaluated on both the 72-record and 288-record sets, which are not held out from the nine training schemas (see erratum above the results table).
 - Greedy teacher decoding (`temperature=0.0`) throughout, for reproducibility.
 
 ## Training
