@@ -20,7 +20,7 @@ Pure LLM extraction of structured fields from noisy documents (OCR errors, typos
 | Deterministic pre-pass alone | 72-record eval | Regex/rule extraction | 0.291 |
 | MiniCPM5-1B (distilled) alone | 72-record eval | Sequence-level KD, iteration 15 (V2-FINAL) | ~0.484 |
 | **Hybrid (rules to model, by field ownership)** | 72-record eval | V2-FINAL, iteration 15 | **0.6827** |
-| Hybrid, V3 best | 72-record eval | 2-epoch recipe, fuzzy-gated n=100 corpus (iteration 2) | 0.6745 |
+| Hybrid, V3 best (in-sample: the same 72-record set chose the recipe) | 72-record eval | 2-epoch recipe, fuzzy-gated corpus (iteration 2) | 0.6745 |
 
 The hybrid system beats both individual systems on every metric simultaneously, not just F1, but precision, recall, hallucination rate, and schema validity. Full provenance and per-iteration numbers: [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md) (V2) and [`docs/WHITEPAPER_V3.md`](docs/WHITEPAPER_V3.md) (V3).
 
@@ -70,7 +70,7 @@ Output is deterministic: the same --seed produces byte-identical JSONL.
 
 **Format.** Each record pairs a corrupted document with gold-labeled structured JSON for one of 12 schemas (schemaforge/schemas/). Corruptions are applied via 10 operators (ocr_noise, typo, delabel, implicit, abbreviate, nest, ambiguate, etc.) at configurable severity, generated deterministically from a seed (schemaforge/hardexamples/generate.py, operators.py, seeds.py).
 
-**Preprocessing / validation.** Teacher outputs pass a 4-step gate before admission to the training set (schemaforge/validation/gate.py): JSON parse, then Pydantic schema validation, then source-support/ontology-derivation check, then no-over-assertion check. Rejection reasons are logged (e.g. data/teacher_dataset_rejections.json).
+**Preprocessing / validation.** Teacher outputs pass a 4-step gate before admission to the training set (schemaforge/validation/gate.py): JSON parse, then Pydantic schema validation, then source-support/ontology-derivation check, then no-over-assertion check. Rejection reasons are logged (the iteration-1 rejections are in data/teacher_dataset_rejections_v3iter1_bak.json; no file named data/teacher_dataset_rejections.json is in the repo).
 
 **Splits.** 9 of the 12 schemas are used for training; insurance_claim, conversation, and kg_triple are **held out entirely** and evaluated only for generalization. generate_dataset(..., split="train") raises if a held-out schema is requested, this is enforced in code, not just convention.
 
@@ -104,7 +104,7 @@ This project trains on a single **AMD Instinct MI300X (192GB)** node via SSH; th
 | Distillation objective | Sequence-level CE only | No logit KL, teacher and student use different tokenizers |
 | Precision | bf16 | fp16 disabled in configs/ds_config.json |
 | ZeRO stage | 2 | Gradient accumulation steps: 4 |
-| Corpus size (V3 best) | n=100 docs, fuzzy-gated to 2691/3600 admitted | See docs/WHITEPAPER_V3.md iteration 2 |
+| Corpus size (V3 best) | n=100 per schema per severity (9 schemas × 4 severities = 3600 generated records), fuzzy-gated to 2691 admitted | See docs/WHITEPAPER_V3.md iteration 2 |
 | Teacher decoding | Greedy (temperature=0.0) | Fixed for determinism, see below |
 
 ## Evaluation

@@ -42,8 +42,9 @@ Rather than re-run generation, iteration 2 exploited the pipeline's determinism:
 - `src/09_recover_fuzzy.py` (commit `a8be53d`) re-ran the gate on iter-1's saved rejections
   (`data/teacher_dataset_rejections_v3iter1_bak.json`, 1443 records) with `fuzzy_support=True`
   (threshold 0.85), then rebuilt training prompts via importlib from `01_generate_teacher.py`.
-- Result: **534/1443 (37%)** step-3 rejections recovered → **2691/3600 admitted (25.2% rejected
-  vs 40.1% under the strict gate)** → `data/teacher_dataset_v3iter2.json`.
+- Result: **534 of the 1232 step-3 rejections (43%)** recovered. The other 211 of the 1443
+  rejections failed step 2 (schema validation), which fuzzy matching cannot change → **2691/3600
+  admitted (25.2% rejected vs 40.1% under the strict gate)** → `data/teacher_dataset_v3iter2.json`.
 
 The pre-iteration checkpoint backup (`models/distilled_minicpm5_1b_v2_amd_pre_v3iter2`) was
 verified intact before training, so the recovery introduced no risk to the canonical V2-FINAL
@@ -59,7 +60,11 @@ checkpoint.
 | V3 iter 3 | n=100 | 1 | 2e-5 | 2691/3600 | 0.6597 | 57.0% (196/344) | 0.6524 | 0.9410 | 0.1577 |
 | V3 iter 4 | n=100 | 2 | 1e-5 | 2691/3600 | 0.6671 | 56.4% (202/358) | 0.6650 | 0.8611 | 0.1200 |
 
-Detail on the best checkpoint (V3 iter 2, 72-record eval, hybrid system):
+The 288-record set has no V2 or iter-1 result and shares 3 items with the 72-record set, so it cannot
+rank the four runs.
+
+Detail on the best of the four V3 runs (V3 iter 2, 72-record eval, hybrid system). The 72-record set
+also chose the recipe, so these are in-sample selection scores, not unseen-data results (see §4):
 
 | metric | value |
 |---|---|
@@ -71,29 +76,34 @@ Detail on the best checkpoint (V3 iter 2, 72-record eval, hybrid system):
 | missing_field_rate | 0.1144 |
 | missing_field share of failures | 52.3% (196/375) |
 
-## 4. Confirmed recipe optimum
+## 4. Recipe comparison (72-record set, in-sample)
 
-- **Epoch sweep** (fuzzy-gate corpus, LR=2e-5): 1ep **0.6597** / 2ep **0.6745** / 3ep **0.6581**
-  → **2 epochs is the optimum**. Iter 3's 1-epoch run underfits (ties iter 1's 3-epoch result);
-  iter 1's 3-epoch run over-converges (3237 total steps, near-zero loss plateau).
-- **LR sweep** (2-epoch optimum): 2e-5 **0.6745** / 1e-5 **0.6671** → **LR=2e-5 is the optimum**.
+- **Epoch sweep** (LR=2e-5): on the fuzzy-gate corpus only 1ep **0.6597** and 2ep **0.6745** were run.
+  The 3ep point **0.6581** is iter 1, trained on the strict 2157-record corpus, so it is not a
+  like-for-like comparison. A 3-epoch run on the fuzzy corpus has not been done.
+  → **2 epochs scored highest of the settings tested, on the 72-record set (in-sample).** Iter 3's
+  1-epoch run underfits (ties iter 1's 3-epoch result); iter 1's 3-epoch run over-converges (3237
+  total steps, near-zero loss plateau).
+- **LR sweep** (2 epochs): 2e-5 **0.6745** / 1e-5 **0.6671** → **2e-5 scored highest of the two tested.**
   The lower LR under-trains on this small corpus (final epoch loss 0.0333 vs 0.0162 at 2e-5;
   schema validity drops 0.8889 → 0.8056, the biggest single regression of the sweep).
-- **Recipe-grid conclusion: 2 epochs at LR=2e-5 is the confirmed optimum**; V2/V3's default
-  recipe was already near-optimal for this corpus. Neither more steps (iter 1, 3 epochs), fewer
-  steps (iter 3, 1 epoch), nor a lower LR helps.
+- **Recipe-grid conclusion: among the settings tested on the 72-record set, 2 epochs at LR=2e-5 scored
+  highest.** The recipe was chosen on that set, so this is an in-sample result. The 3-epoch comparison
+  point used the strict corpus. Whether 3 epochs on the fuzzy corpus would do better is untested.
 
 ## 5. Standing conclusion
 
 - `missing_field` (omission) **remains the dominant failure category**: V3's best (iter 2)
   reached **52.3%** share — the lowest measured in the project and the first below V2's 55-62%
   band — but the gap is not closed.
-- The V3 mechanism finding: **total training steps, not corpus size per se**, drives these
-  checkpoints' generalization. 2692 steps (2×1346, iter 2) sits between iteration 15's 2439
+- The V3 mechanism **hypothesis**: total training steps, not corpus size per se, may drive these
+  results. It is not isolated: iter 1 vs iter 2 changes both the corpus and the epoch count, and no
+  fuzzy-corpus run at 3 epochs exists. The one same-corpus epoch comparison (iter 2 vs iter 3)
+  supports under-training at 1 epoch only. 2692 steps (2×1346, iter 2) sits between iteration 15's 2439
   (3×813) and iter 1's 3237 (3×1079); the larger corpus only hurt when forced through a third
   epoch in the over-converged regime.
 - **No V3 checkpoint beats V2-FINAL (0.6827) on the comparable 72-record eval** — iter 2's
-  0.6745 is -0.0082 below. Every iteration manifest records
+  0.6745 is -0.0082 below, on the set that chose the V3 recipe. Every iteration manifest records
   `checkpoint_used_for_huggingface_upload: false`. The release candidate remains V2-FINAL
   (iteration 15; `models/schemaforge-v2-distilled-minicpm5-1b/`, sha256 `c13f7f6c…`), prepared
   for publication and pending the project owner's Hugging Face upload.

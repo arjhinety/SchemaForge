@@ -119,3 +119,10 @@ spot-checking) for this run, since it's independently justified and ready.
 **Interpretation.** The lower LR under-trains on this small corpus: higher final training loss, and the biggest regression is schema validity (more schema-invalid model outputs reach the hybrid merge). Combined with the epoch sweep (1/2/3), the training-recipe picture is now: **2 epochs at LR=2e-5 is the confirmed optimum** of the tested recipe grid. V2/V3's default recipe was already near-optimal for this corpus; neither more steps (iter 1, 3 epochs) nor fewer (iter 3, 1 epoch) nor a lower LR helps.
 
 **Status.** Iter-2's checkpoint restored to canonical after this test. Still not an HF-upload candidate (iter-2 remains best in V3 at 0.6745, still -0.0082 below published V2/iter-15's 0.6827).
+
+## Correction — 2026-11-04 (appended; earlier entries unchanged)
+
+- **Recovery denominator.** 534 of the 1232 step-3 rejections were recovered (43%), not 534/1443 (37%). The other 211 of the 1443 failed step 2 (schema validation), which fuzzy matching cannot change.
+- **Epoch sweep.** The 3-epoch point (iter 1, 0.6581) was trained on the strict 2157-record corpus. On the fuzzy 2691-record corpus only 1 and 2 epochs were run. Any "optimum" statement applies to the tested settings, measured in-sample on the 72-record set. A 3-epoch run on the fuzzy corpus has not been done.
+- **Confounding.** Iter 2 vs iter 1 changes the corpus and the epoch count together. "Total steps, not corpus size" is a hypothesis, not an isolated result.
+- **Manifests.** The status notes in the iter-2, iter-3 and iter-4 manifests carry the uncorrected wording. They are left unchanged as provenance records. The iter-4 manifest cites `data/teacher_dataset.json`, which is not in the repo; the file is `data/teacher_dataset_v3iter2.json`.
