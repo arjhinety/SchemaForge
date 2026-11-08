@@ -83,7 +83,7 @@ corpus.
 `schemaforge/evaluation/harness.py`: micro-averaged field precision/recall/F1, exact match,
 schema validity, hallucination rate, missing-field rate, sliced per schema and per corruption tag
 (research direction §6: "slicing is the point" — an aggregate mean would hide the result this
-project exists to produce). The held-out eval set grew from 72 to 288 records partway through the
+project exists to produce). The eval set grew from 72 to 288 records partway through the
 project specifically because the smaller set could not reliably distinguish real improvements
 from run-to-run noise (see §7).
 
@@ -115,6 +115,8 @@ invocation is logged and reviewed before the next). Records a full machine-reada
 run under `experiments/<run-id>/`.
 
 ## 3. Results — the headline hybrid comparison
+
+> **Erratum (2026-11-04).** The 72-record and 288-record eval sets are not held out from training: they use the same seed templates as the training corpus. Against the V2 training corpus, 27 of 72 and 109 of 288 eval source texts match a training document after entity masking (similarity >= 0.95), counted with the legacy masking rule (`python -m dprep overlap --masking legacy`); exact matches are 0 of 72 and 0 of 288. The 0.6827 hybrid score and the other scores in this section are in-sample for the nine training schemas. See the erratum in `README.md` for the full statement.
 
 Measured on the 72-record eval set (all 12 schemas including the 3 held-out ones), using the
 iteration-12 checkpoint (the hybrid 0.6432 below is iteration 12's number; the all-time best,
