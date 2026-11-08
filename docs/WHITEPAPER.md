@@ -152,16 +152,12 @@ structural, not corruption-dependent.
 | iteration 12 | 634 (same corpus as iter 5) | 0.6432 (hybrid) | regression, same setup as iter 5 — see §7 |
 | iteration 13 | 1627 | 0.6830 (hybrid) | recovery, still below iter 5/10 |
 | iteration 14 | 2685 | 0.6583 (hybrid) | regression, targeted-corpus hypothesis not supported |
-| **iteration 15 (V2-FINAL, release checkpoint)** | 1625 | **0.6827 (hybrid)** | prepared for publication — `models/schemaforge-v2-distilled-minicpm5-1b/`, sha256 `c13f7f6c`; NOT yet uploaded to HF |
+| **iteration 15 (V2-FINAL, release checkpoint)** | 1625 | **0.6827 (hybrid)** | published — `models/schemaforge-v2-distilled-minicpm5-1b/`, sha256 `c13f7f6c`; uploaded to Hugging Face on 2026-11-04 |
 
-**The currently-published (Hugging Face) checkpoint remains iteration 5/10** (per
-`logs/V2_TRAINING_FAILURES.md` — iterations 13, 14, and 15 each explicitly declined upload).
-**V2-FINAL (iteration 15) is the release checkpoint prepared for publication** —
-`models/schemaforge-v2-distilled-minicpm5-1b/` (sha256 `c13f7f6c`), 1625 gate-admitted training
-examples, 72-rec hybrid field F1 0.6827, pending the project owner's Hugging Face upload.
+**The published (Hugging Face) V2 checkpoint is iteration 15 (V2-FINAL).** It was uploaded on 2026-11-04 as `arjhinety/schemaforge-v2-distilled-minicpm5-1b` (sha256 `c13f7f6c`). Earlier iterations 13, 14 and 15 had declined upload (`logs/V2_TRAINING_FAILURES.md`). V2-FINAL is 1625 gate-admitted training examples, with 72-rec hybrid field F1 0.6827 on the in-sample eval set (see the erratum in §3).
 Iteration 5/10 still holds the all-time 72-rec hybrid-F1 best (0.6858); 15's label-determinism
 fix (greedy teacher decoding, validated on a byte-identical corpus re-run — see §7) made it the
-reproducible, publishable candidate: 0.6827 sits 0.0031 below the all-time best on a pipeline
+reproducible candidate that was published: 0.6827 sits 0.0031 below the all-time best on a pipeline
 whose run-to-run variance is now characterized. V3 continues this work in `docs/WHITEPAPER_V3.md`.
 
 ## 4. What is NOT in this whitepaper yet
